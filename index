@@ -1,0 +1,175 @@
+<?php
+session_start();
+include 'db.php';
+if (!isset($_SESSION['user_id'])) {  // Periksa berdasarkan user_id
+    header('Location: login.php');
+    exit();
+}
+
+// Cek apakah sudah login
+if (!isset($_SESSION['user_id'])) {
+    // Jika belum login, arahkan ke halaman login
+    header('Location: login.php');
+    exit();
+}
+
+if (isset($_SESSION['success'])) {
+    echo "<script>alert('" . $_SESSION['success'] . "');</script>";
+    unset($_SESSION['success']); 
+}
+
+// Ambil nama pengguna dari sesi
+$username = $_SESSION['username'] ?? 'Dosen';
+$isAdmin = $_SESSION['role'] == 'admin'; // Sesuaikan dengan role dalam session
+?>
+
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Sistem Penjadwalan Dosen</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .admin-panel, .dosen-panel {
+            background-color: #ffc107;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        .dosen-panel {
+            background-color: #17a2b8;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body id="page-top">
+
+    <header>
+        <h1>Sistem Penjadwalan Dosen</h1>
+    </header>
+
+    <div id="wrapper">
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <!-- Konten Utama -->
+            <div id="content">
+
+                <!-- Topbar -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo htmlspecialchars($username); ?></span>
+                                <img class="img-profile rounded-circle" src="img/undraw_profile.svg">
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                <a class="dropdown-item" href="profile.html">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profil
+                                </a>
+                                <a class="dropdown-item" href="settings.html">
+                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i> Pengaturan
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="logout.php">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Keluar
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+                <!-- Akhir Topbar -->
+
+                <div class="container-fluid">
+                    <h1 class="h3 mb-4 text-gray-800">Selamat datang, <?php echo htmlspecialchars($username); ?>!</h1>
+
+                    <!-- Dashboard untuk Admin atau Dosen -->
+                    <div id="dashboard">
+                        <button class="btn btn-danger mb-3" onclick="logout()">Logout</button>
+
+                        <!-- Panel Admin -->
+                        <div id="admin-panel" class="admin-panel <?php echo $isAdmin ? '' : 'hidden'; ?>">
+                            <h3>Admin Panel</h3>
+                            <form action="delete.php" method="POST">
+                                <div class="form-group">
+                                    <label for="delete-username">Hapus User:</label>
+                                    <input type="text" id="delete-username" name="username" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-danger">Hapus</button>
+                            </form>
+                        </div>
+
+                        <!-- Panel Dosen -->
+                        <div id="dosen-panel" class="dosen-panel <?php echo !$isAdmin ? '' : 'hidden'; ?>">
+                            <h3>Jadwal Saya</h3>
+                            <table class="table table-bordered">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Tanggal</th>
+                                        <th>Jam</th>
+                                        <th>Ruangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Jadwal dosen akan diisi oleh PHP -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JavaScript inti -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <script>
+        function logout() {
+            window.location.href = 'logout.php';
+        }
+
+        // Menampilkan dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            const isAdmin = <?php echo json_encode($isAdmin); ?>;
+
+            if (isAdmin) {
+                document.getElementById('admin-panel').classList.remove('hidden');
+            } else {
+                document.getElementById('dosen-panel').classList.remove('hidden');
+            }
+        });
+    </script>
+
+</body>
+
+</html>
